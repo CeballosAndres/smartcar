@@ -1,3 +1,4 @@
+// Rename this file to 'config.h' and change the credentials
 const char* ssid     = "yourssid";
 const char* password = "yourpassword";
 const char* hostname = "hostname";
