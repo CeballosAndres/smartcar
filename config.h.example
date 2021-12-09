@@ -1,0 +1,7 @@
+const char* ssid     = "yourssid";
+const char* password = "yourpassword";
+const char* hostname = "hostname";
+
+IPAddress ip(192, 168, 1, 41);
+IPAddress gateway(192, 168, 1, 254);
+IPAddress subnet(255, 255, 255, 0);
