@@ -5,6 +5,7 @@
 
 config.h
 .vscode/
+env/
 ### macOS ###
 # General
 .DS_Store

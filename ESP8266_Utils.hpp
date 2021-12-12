@@ -1,13 +1,12 @@
-void ConnectWiFi_STA(bool useStaticIP = false)
-{
+void ConnectWiFi_STA(bool useStaticIP = false) {
   Serial.println("");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  if(useStaticIP) WiFi.config(ip, gateway, subnet);
-  while (WiFi.status() != WL_CONNECTED) 
-  { 
-    delay(100);  
-    Serial.print('.'); 
+  if (useStaticIP)
+    WiFi.config(ip, gateway, subnet);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print('.');
   }
 
   Serial.println("");
@@ -17,16 +16,15 @@ void ConnectWiFi_STA(bool useStaticIP = false)
   Serial.println(WiFi.localIP());
 }
 
-void ConnectWiFi_AP(bool useStaticIP = false)
-{ 
+void ConnectWiFi_AP(bool useStaticIP = false) {
   Serial.println("");
   WiFi.mode(WIFI_AP);
-  while(!WiFi.softAP(ssid, password))
-  {
+  while (!WiFi.softAP(ssid, password)) {
     Serial.println(".");
     delay(100);
   }
-  if(useStaticIP) WiFi.softAPConfig(ip, gateway, subnet);
+  if (useStaticIP)
+    WiFi.softAPConfig(ip, gateway, subnet);
 
   Serial.println("");
   Serial.print("Iniciado AP:\t");
