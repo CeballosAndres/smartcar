@@ -4,6 +4,7 @@
 #include <Servo.h> // Librería para controlar el servomotor
 
 #include "config.h"              // Archivo con configuraciones WiFi
+
 #include "ESP8266_Utils.hpp"     // Lógica para conexión WiFi
 #include "ESP8266_Utils_OTA.hpp" // Lógica para actualizaciones OTA
 
@@ -21,6 +22,7 @@
 // Constantes para control del vehiculo
 #define MAX_DISTANCE 50.0 // Distancia desde la que empieza a actuar la NN
 #define INTERVAL 25       // Intervalos cada x milisegundos (default: 25)
+#define INTERVAL_LED 500       // Intervalos cada x milisegundos (default: 25)
 #define MIN_ANGLE 30      // Angulo mínimo
 #define MAX_ANGLE 150     // Angulo máximo
 #define SPEED 350         // Velocidad del coche de las 4 ruedas a la vez.
@@ -28,16 +30,8 @@
 #define HIDDEN_NODES 4    // Incluye neurona de BIAS
 #define OUTPUT_NODES 2
 // Ver archivo Red Neuronal.ipynb
-const float HIDDEN_WEIGHTS[3][4] = {{0.7275975749344724, 0.4503027161487413,
-                                     0.8552967948325267, -1.873101008584999},
-                                    {2.195357614748038, -1.873861449016526,
-                                     -0.22216111454845439, 0.5437162657578472},
-                                    {-1.2439843837147233, -0.9568416152483532,
-                                     1.8287413668011634, -0.9184206516900568}};
-const float OUTPUT_WEIGHTS[4][2] = {{0.7521117180259367, -1.7989000292379824},
-                                    {2.019518778880603, -0.5486039813852713},
-                                    {0.31316492038569793, -0.9028487180011288},
-                                    {-0.9986952677018821, -2.073904790093195}};
+const float HIDDEN_WEIGHTS[3][4] = {{0.7993371118882053, -1.4047014502226984, 0.9414582048050834, 0.07642009631120551}, {-0.13297965743408063, -3.341301702562721, 0.6131066138656246, -2.3255056135814103}, {0.23604578914209137, 1.6221600044678037, -0.2315280391669793, -0.7173392995794886}};
+const float OUTPUT_WEIGHTS[4][2] = {{0.889885617059632, 0.44366950248439924}, {-0.5935876267502912, 2.0265443012303415}, {1.1108713149135987, 2.0667292793021828}, {2.1970641405729454, 0.10949879437586214}};
 
 // Variables de configuración para la red neuronal
 int i, j;
@@ -47,6 +41,7 @@ double output[OUTPUT_NODES];
 
 // Variables para control del vehiculo
 unsigned long previousMillis = 0; // Para medir ciclos de tiempo
+unsigned long previousMillisLed = 0; // Para medir ciclos de tiempo para leds
 int servoAngle = 90; // Posición del servoMotor que mueve el sensor ultrasónico
 bool clockwise = true; // Sentido de giro del servoMotor
 int increments = 9;    // Incrementos por ciclo de posición del servoMotor
@@ -54,6 +49,8 @@ int currentAction = 1; // Cantidad de ciclos ejecutando una acción (aumenta al
                        // detectar objeto cercano)
 int multiplier = 500 / INTERVAL; // Multiplica los ciclos para dar tiempo a que
                                  // el coche pueda girar (def: 1000)
+int flag_led_left = 0;
+int flag_led_right = 0;
 
 // Instanciar objetos
 Servo servoMotor;
@@ -62,8 +59,8 @@ NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 void stop();
 
 void setup() {
-  ConnectWiFi_STA(); // Habilitar la actualización por OTA
-  InitOTA();
+  //ConnectWiFi_STA(); // Habilitar la actualización por OTA
+  //InitOTA();
   Serial.begin(115200); // Iniciar comunicación serial
   pinMode(MDA, OUTPUT); // Definición de pines como salidas
   pinMode(MDB, OUTPUT);
@@ -78,7 +75,7 @@ void setup() {
 }
 
 void loop() {
-  ArduinoOTA.handle(); // Llamada a método para iniciar actualización OTA
+  //ArduinoOTA.handle(); // Llamada a método para iniciar actualización OTA
 
   unsigned long currentMillis = millis(); // Captura tiempo actual
   if (currentMillis - previousMillis >= INTERVAL) {
@@ -100,6 +97,23 @@ void loop() {
     }
     servoMotor.write(servoAngle);
   }
+
+  currentMillis = millis();
+  if ((flag_led_left == 1) || (flag_led_right == 1)){
+    if (currentMillis - previousMillisLed >= INTERVAL_LED){
+      previousMillisLed = currentMillis;
+
+      if (flag_led_left == 1)
+        digitalWrite(LED_LEFT, !digitalRead(LED_LEFT));
+      if (flag_led_right == 1)
+        digitalWrite(LED_RIGHT, !digitalRead(LED_RIGHT));
+
+    }
+  } else {
+    digitalWrite(LED_LEFT, LOW);
+    digitalWrite(LED_RIGHT, LOW);
+  }
+
 }
 
 void stop() {
@@ -153,6 +167,9 @@ void drive() {
   // outputOne=1: 1*HIGH=HIGH / ouputOne=0: 0*HIGH=LOW
   digitalWrite(MDA, outputOne * HIGH);
   digitalWrite(MDB, outputTwo * HIGH);
+  // LEDS frontales (prender o apagar) 
+  flag_led_left = outputOne * 1;
+  flag_led_right = outputTwo * 1;
 }
 
 void feedForward(double In1, double In2, double In3) {
